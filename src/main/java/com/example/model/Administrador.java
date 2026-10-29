@@ -1,8 +1,17 @@
 package com.example.model;
 
 import java.time.LocalDate;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
+@Entity
+@Table(name = "administradores")
 public class Administrador {
+    @Id                                                
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     String Documento;
     String nombre;
     String Apellidos;
