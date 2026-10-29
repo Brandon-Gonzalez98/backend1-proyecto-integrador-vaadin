@@ -1,17 +1,29 @@
 package com.example.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "apartamentos")
+
 public class Apartamento {
 
-    String IdApto;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long IdApto;
+    /*String IdApto;*/
     String NumeroApto;
     String Torre;
     String Parqueadero;
     String CuartoUtil;
     String IdDocumento;
 
-    public Apartamento(String idApto, String numeroApto, String torre, String parqueadero, String cuartoUtil,
+    public Apartamento(Long IdApto, String numeroApto, String torre, String parqueadero, String cuartoUtil,
             String idDocumento) {
-        this.IdApto = idApto;
+        this.IdApto = IdApto;
         this.NumeroApto = numeroApto;
         this.Torre = torre;
         this.Parqueadero = parqueadero;
@@ -22,11 +34,11 @@ public class Apartamento {
     public Apartamento() {
     }
 
-    public String getIdApto() {
+    public Long getIdApto() {
         return IdApto;
     }
 
-    public void setIdApto(String idApto) {
+    public void setIdApto(Long idApto) {
         IdApto = idApto;
     }
 
