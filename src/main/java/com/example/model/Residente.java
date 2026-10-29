@@ -1,15 +1,26 @@
 package com.example.model;
 
 import java.time.LocalDate;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "residentes")
 
 public class Residente {
-    String Documento;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long Documento;
+    /*String Documento;*/
     String nombre;
     String Apellidos;
     LocalDate FechaDeNacimiento;
     String Celular;
     String Correo;
-    public Residente(String documento, String nombre, String apellidos, LocalDate fechaDeNacimiento, String celular,
+    public Residente(Long documento, String nombre, String apellidos, LocalDate fechaDeNacimiento, String celular,
             String correo) {
         this.Documento = documento;
         this.nombre = nombre;
@@ -23,11 +34,11 @@ public class Residente {
         
     }
 
-    public String getDocumento() {
+    public Long getDocumento() {
         return Documento;
     }
 
-    public void setDocumento(String documento) {
+    public void setDocumento(Long documento) {
         Documento = documento;
     }
 
