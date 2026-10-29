@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import com.example.model.Administrador;
 import com.example.model.Apartamento;
 import com.example.model.Propiedad;
+import com.example.model.Residente;
 import com.example.model.Usuario;
 import com.example.service.CrudService;
 import com.vaadin.flow.component.Component;
@@ -35,10 +36,11 @@ public class MainView extends VerticalLayout {
 
         TabSheet tabs = new TabSheet();
         tabs.setWidthFull();
-        tabs.add("Productos", crearSeccionProductos());
-        tabs.add("Categorías", crearSeccionCategorias());
-        tabs.add("Proveedores", crearSeccionProveedores());
-        tabs.add("Usuarios", crearSeccionUsuarios());
+        tabs.add("Administrador", crearSeccionProductos());
+        tabs.add("Apartamento", crearSeccionCategorias());
+        tabs.add("Propiedad", crearSeccionProveedores());
+        tabs.add("Residente", crearSeccionUsuarios());
+        tabs.add("Usuario", crearSeccionUsuarios());
 
         add(new H2("Sistema de Inventario - CRUD"), tabs);
     }
