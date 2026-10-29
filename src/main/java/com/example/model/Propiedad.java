@@ -12,7 +12,7 @@ import jakarta.persistence.Table;
 public class Propiedad {
 @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long nit;
+    private Long Nit;
     String  NombrePropiedad;
     String Direccion;
     String Ciudad;
@@ -33,7 +33,7 @@ public class Propiedad {
        
     }
 
-    public String getNit() {
+    public long getNit() {
         return Nit;
     }
 
