@@ -1,14 +1,25 @@
 package com.example.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "propiedades")
+
 public class Propiedad {
-    String Nit;
+@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long nit;
     String  NombrePropiedad;
     String Direccion;
     String Ciudad;
     String Departamento;
     String IdApto;
 
-    public Propiedad(String nit, String nombrePropiedad, String direccion, String ciudad, String departamento,
+    public Propiedad(Long nit, String nombrePropiedad, String direccion, String ciudad, String departamento,
             String idApto) {
         this.Nit = nit;
         this.NombrePropiedad = nombrePropiedad;
@@ -26,7 +37,7 @@ public class Propiedad {
         return Nit;
     }
 
-    public void setNit(String nit) {
+    public void setNit(Long nit) {
         Nit = nit;
     }
 
