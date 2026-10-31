@@ -1,5 +1,6 @@
 package com.example;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.example.model.Administrador;
@@ -11,6 +12,7 @@ import com.example.service.CrudService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H2;
@@ -22,7 +24,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-@PageTitle("Gestión CRUD - Sistema de Inventario")
+@PageTitle("Gestión de propiedad horizontal")
 @Route("")
 public class MainView extends VerticalLayout {
 
@@ -36,297 +38,322 @@ public class MainView extends VerticalLayout {
 
         TabSheet tabs = new TabSheet();
         tabs.setWidthFull();
-        tabs.add("Administrador", crearSeccionProductos());
-        tabs.add("Apartamento", crearSeccionCategorias());
-        tabs.add("Propiedad", crearSeccionProveedores());
-        tabs.add("Residente", crearSeccionUsuarios());
-        tabs.add("Usuario", crearSeccionUsuarios());
+        tabs.add("Administradores", crearSeccionAdministradores());
+        tabs.add("Apartamentos", crearSeccionApartamentos());
+        tabs.add("Propiedades", crearSeccionPropiedades());
+        tabs.add("Residentes", crearSeccionResidentes());
+        tabs.add("Usuarios", crearSeccionUsuarios());
 
-        add(new H2("Sistema de Inventario - CRUD"), tabs);
+        add(new H2("Gestión de propiedad horizontal"), tabs);
     }
 
-    // ==========================================
-    // 1. PRODUCTOS
-    // ==========================================
-    private Component crearSeccionProductos() {
+    private Component crearSeccionAdministradores() {
         VerticalLayout layout = new VerticalLayout();
-        TextField idField = new TextField("ID");
-        TextField codigoField = new TextField("Código");
-        TextField nombreField = new TextField("Nombre");
-        TextField categoriaField = new TextField("Categoría");
-        TextField precioField = new TextField("Precio");
-        TextField stockField = new TextField("Stock");
+        TextField documento = new TextField("Documento");
+        TextField nombre = new TextField("Nombre");
+        TextField apellidos = new TextField("Apellidos");
+        DatePicker fechaNacimiento = new DatePicker("Fecha de nacimiento");
+        TextField celular = new TextField("Celular");
+        TextField correo = new TextField("Correo");
+        TextField nit = new TextField("NIT de la propiedad");
+        FormLayout form = new FormLayout(documento, nombre, apellidos, fechaNacimiento, celular, correo, nit);
 
-        FormLayout form = new FormLayout(idField, codigoField, nombreField, categoriaField, precioField, stockField);
-
-        Grid<Producto> grid = new Grid<>(Producto.class, false);
-        grid.addColumn(Producto::getId).setHeader("ID").setAutoWidth(true);
-        grid.addColumn(Producto::getCodigo).setHeader("Código").setAutoWidth(true);
-        grid.addColumn(Producto::getNombre).setHeader("Nombre").setAutoWidth(true);
-        grid.addColumn(Producto::getCategoria).setHeader("Categoría").setAutoWidth(true);
-        grid.addColumn(Producto::getPrecio).setHeader("Precio").setAutoWidth(true);
-        grid.addColumn(Producto::getStock).setHeader("Stock").setAutoWidth(true);
-
-        Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Producto.class));
+        Grid<Administrador> grid = new Grid<>(Administrador.class, false);
+        grid.addColumn(Administrador::getDocumento).setHeader("Documento").setAutoWidth(true);
+        grid.addColumn(Administrador::getNombre).setHeader("Nombre").setAutoWidth(true);
+        grid.addColumn(Administrador::getApellidos).setHeader("Apellidos").setAutoWidth(true);
+        grid.addColumn(Administrador::getFechaDeNacimiento).setHeader("Fecha de nacimiento").setAutoWidth(true);
+        grid.addColumn(Administrador::getCelular).setHeader("Celular").setAutoWidth(true);
+        grid.addColumn(Administrador::getCorreo).setHeader("Correo").setAutoWidth(true);
+        grid.addColumn(Administrador::getNit).setHeader("NIT").setAutoWidth(true);
+        Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Administrador.class));
         refrescar.run();
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(administrador -> {
+            documento.setValue(valor(administrador.getDocumento()));
+            nombre.setValue(valor(administrador.getNombre()));
+            apellidos.setValue(valor(administrador.getApellidos()));
+            fechaNacimiento.setValue(administrador.getFechaDeNacimiento());
+            celular.setValue(valor(administrador.getCelular()));
+            correo.setValue(valor(administrador.getCorreo()));
+            nit.setValue(valor(administrador.getNit()));
+        }));
 
-        grid.asSingleSelect().addValueChangeListener(e -> {
-            Producto p = e.getValue();
-            if (p != null) {
-                idField.setValue(p.getId() != null ? p.getId().toString() : "");
-                codigoField.setValue(p.getCodigo() != null ? p.getCodigo() : "");
-                nombreField.setValue(p.getNombre() != null ? p.getNombre() : "");
-                categoriaField.setValue(p.getCategoria() != null ? p.getCategoria() : "");
-                precioField.setValue(p.getPrecio() != null ? p.getPrecio().toString() : "");
-                stockField.setValue(p.getStock() != null ? p.getStock().toString() : "");
+        Button crear = botonCrear(() -> {
+            if (!validar(documento.getValue(), "El documento es obligatorio")
+                    || !validar(fechaNacimiento.getValue(), "Seleccione la fecha de nacimiento")) {
+                return;
             }
-        });
-
-        Button btnCrear = new Button("Crear", e -> {
-            Producto p = new Producto(
-                codigoField.getValue(),
-                nombreField.getValue(),
-                categoriaField.getValue(),
-                parseDouble(precioField.getValue()),
-                parseInt(stockField.getValue())
-            );
-            crudService.guardar(p);
+            Administrador administrador = new Administrador(documento.getValue().trim(), nombre.getValue(),
+                    apellidos.getValue(), fechaNacimiento.getValue(), celular.getValue(), correo.getValue(),
+                    nit.getValue());
+            crudService.guardar(administrador);
             refrescar.run();
-            idField.setValue(p.getId() != null ? p.getId().toString() : "");
-            Notification.show("Producto guardado con ID: " + p.getId());
+            Notification.show("Administrador guardado");
         });
-        btnCrear.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        Button btnConsultar = new Button("Consultar", e -> {
-            Producto p = crudService.buscarPorId(Producto.class, parseId(idField));
-            if (p != null) {
-                grid.asSingleSelect().setValue(p);
-                Notification.show("Encontrado: " + p.getNombre());
+        Button consultar = new Button("Consultar", event -> {
+            String id = documento.getValue().trim();
+            if (!validar(id, "Ingrese el documento que desea consultar")) {
+                return;
+            }
+            Administrador administrador = crudService.buscarPorId(Administrador.class, id);
+            if (administrador == null) {
+                Notification.show("No se encontró el administrador");
             } else {
-                Notification.show("No encontrado");
+                grid.select(administrador);
             }
         });
-
-        Button btnActualizar = new Button("Actualizar", e -> {
-            Producto p = crudService.buscarPorId(Producto.class, parseId(idField));
-            if (p != null) {
-                p.setCodigo(codigoField.getValue());
-                p.setNombre(nombreField.getValue());
-                p.setCategoria(categoriaField.getValue());
-                p.setPrecio(parseDouble(precioField.getValue()));
-                p.setStock(parseInt(stockField.getValue()));
-                crudService.actualizar(p);
+        Button actualizar = new Button("Actualizar", event -> {
+            String id = documento.getValue().trim();
+            if (!validar(id, "Ingrese el documento del administrador")
+                    || !validar(fechaNacimiento.getValue(), "Seleccione la fecha de nacimiento")) {
+                return;
+            }
+            Administrador administrador = crudService.buscarPorId(Administrador.class, id);
+            if (administrador == null) {
+                Notification.show("No se encontró el administrador");
+                return;
+            }
+            administrador.setNombre(nombre.getValue());
+            administrador.setApellidos(apellidos.getValue());
+            administrador.setFechaDeNacimiento(fechaNacimiento.getValue());
+            administrador.setCelular(celular.getValue());
+            administrador.setCorreo(correo.getValue());
+            administrador.setNit(nit.getValue());
+            crudService.actualizar(administrador);
+            refrescar.run();
+            Notification.show("Administrador actualizado");
+        });
+        Button eliminar = new Button("Eliminar", event -> {
+            String id = documento.getValue().trim();
+            if (!validar(id, "Ingrese el documento del administrador")) {
+                return;
+            }
+            if (crudService.eliminar(Administrador.class, id)) {
                 refrescar.run();
-                Notification.show("Producto actualizado");
+                limpiar(documento, nombre, apellidos, celular, correo, nit);
+                fechaNacimiento.clear();
+                grid.deselectAll();
+                Notification.show("Administrador eliminado");
             } else {
-                Notification.show("ID no encontrado");
+                Notification.show("No se encontró el administrador");
             }
         });
-
-        Button btnEliminar = new Button("Eliminar", e -> {
-            crudService.eliminar(Producto.class, parseId(idField));
-            refrescar.run();
-            limpiar(idField, codigoField, nombreField, categoriaField, precioField, stockField);
-            Notification.show("Producto eliminado");
-        });
-        btnEliminar.addThemeVariants(ButtonVariant.LUMO_ERROR);
-
-        Button btnLimpiar = new Button("Limpiar", e -> {
-            limpiar(idField, codigoField, nombreField, categoriaField, precioField, stockField);
-            grid.asSingleSelect().clear();
-        });
-
-        layout.add(form, crearAcciones(btnCrear, btnConsultar, btnActualizar, btnEliminar, btnLimpiar), grid);
+        eliminar.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        layout.add(form, crearAcciones(crear, consultar, actualizar, eliminar,
+                botonLimpiar(grid, documento, nombre, apellidos, celular, correo, nit, fechaNacimiento)), grid);
         return layout;
     }
 
-    // ==========================================
-    // 2. CATEGORÍAS
-    // ==========================================
-    private Component crearSeccionCategorias() {
+    private Component crearSeccionApartamentos() {
         VerticalLayout layout = new VerticalLayout();
-        TextField idField = new TextField("ID");
-        TextField nombreField = new TextField("Nombre");
-        TextField descripcionField = new TextField("Descripción");
+        TextField id = new TextField("ID del apartamento");
+        id.setReadOnly(true);
+        TextField numero = new TextField("Número");
+        TextField torre = new TextField("Torre");
+        TextField parqueadero = new TextField("Parqueadero");
+        TextField cuartoUtil = new TextField("Cuarto útil");
+        TextField documentoResidente = new TextField("Documento del residente");
+        FormLayout form = new FormLayout(id, numero, torre, parqueadero, cuartoUtil, documentoResidente);
 
-        FormLayout form = new FormLayout(idField, nombreField, descripcionField);
-
-        Grid<Categoria> grid = new Grid<>(Categoria.class, false);
-        grid.addColumn(Categoria::getId).setHeader("ID").setAutoWidth(true);
-        grid.addColumn(Categoria::getNombre).setHeader("Nombre").setAutoWidth(true);
-        grid.addColumn(Categoria::getDescripcion).setHeader("Descripción").setAutoWidth(true);
-
-        Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Categoria.class));
+        Grid<Apartamento> grid = new Grid<>(Apartamento.class, false);
+        grid.addColumn(Apartamento::getIdApto).setHeader("ID").setAutoWidth(true);
+        grid.addColumn(Apartamento::getNumeroApto).setHeader("Número").setAutoWidth(true);
+        grid.addColumn(Apartamento::getTorre).setHeader("Torre").setAutoWidth(true);
+        grid.addColumn(Apartamento::getParqueadero).setHeader("Parqueadero").setAutoWidth(true);
+        grid.addColumn(Apartamento::getCuartoUtil).setHeader("Cuarto útil").setAutoWidth(true);
+        grid.addColumn(Apartamento::getIdDocumento).setHeader("Documento del residente").setAutoWidth(true);
+        Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Apartamento.class));
         refrescar.run();
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(apartamento -> {
+            id.setValue(valor(apartamento.getIdApto()));
+            numero.setValue(valor(apartamento.getNumeroApto()));
+            torre.setValue(valor(apartamento.getTorre()));
+            parqueadero.setValue(valor(apartamento.getParqueadero()));
+            cuartoUtil.setValue(valor(apartamento.getCuartoUtil()));
+            documentoResidente.setValue(valor(apartamento.getIdDocumento()));
+        }));
 
-        grid.asSingleSelect().addValueChangeListener(e -> {
-            Categoria c = e.getValue();
-            if (c != null) {
-                idField.setValue(c.getId() != null ? c.getId().toString() : "");
-                nombreField.setValue(c.getNombre() != null ? c.getNombre() : "");
-                descripcionField.setValue(c.getDescripcion() != null ? c.getDescripcion() : "");
-            }
-        });
-
-        Button btnCrear = new Button("Crear", e -> {
-            Categoria c = new Categoria(nombreField.getValue(), descripcionField.getValue());
-            crudService.guardar(c);
+        Button crear = botonCrear(() -> {
+            Apartamento apartamento = new Apartamento(null, numero.getValue(), torre.getValue(),
+                    parqueadero.getValue(), cuartoUtil.getValue(), documentoResidente.getValue());
+            crudService.guardar(apartamento);
             refrescar.run();
-            idField.setValue(c.getId() != null ? c.getId().toString() : "");
-            Notification.show("Categoría guardada con ID: " + c.getId());
+            id.setValue(valor(apartamento.getIdApto()));
+            Notification.show("Apartamento guardado con ID: " + apartamento.getIdApto());
         });
-        btnCrear.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        Button btnConsultar = new Button("Consultar", e -> {
-            Categoria c = crudService.buscarPorId(Categoria.class, parseId(idField));
-            if (c != null) {
-                grid.asSingleSelect().setValue(c);
-                Notification.show("Encontrada: " + c.getNombre());
-            } else {
-                Notification.show("No encontrada");
+        Button consultar = botonConsultar(grid, Apartamento.class, id, "Apartamento");
+        Button actualizar = new Button("Actualizar", event -> {
+            Long idValue = parseId(id);
+            if (idValue == null) {
+                return;
             }
-        });
-
-        Button btnActualizar = new Button("Actualizar", e -> {
-            Categoria c = crudService.buscarPorId(Categoria.class, parseId(idField));
-            if (c != null) {
-                c.setNombre(nombreField.getValue());
-                c.setDescripcion(descripcionField.getValue());
-                crudService.actualizar(c);
-                refrescar.run();
-                Notification.show("Categoría actualizada");
-            } else {
-                Notification.show("ID no encontrado");
+            Apartamento apartamento = crudService.buscarPorId(Apartamento.class, idValue);
+            if (apartamento == null) {
+                Notification.show("No se encontró el apartamento");
+                return;
             }
-        });
-
-        Button btnEliminar = new Button("Eliminar", e -> {
-            crudService.eliminar(Categoria.class, parseId(idField));
+            apartamento.setNumeroApto(numero.getValue());
+            apartamento.setTorre(torre.getValue());
+            apartamento.setParqueadero(parqueadero.getValue());
+            apartamento.setCuartoUtil(cuartoUtil.getValue());
+            apartamento.setIdDocumento(documentoResidente.getValue());
+            crudService.actualizar(apartamento);
             refrescar.run();
-            limpiar(idField, nombreField, descripcionField);
-            Notification.show("Categoría eliminada");
+            Notification.show("Apartamento actualizado");
         });
-        btnEliminar.addThemeVariants(ButtonVariant.LUMO_ERROR);
-
-        Button btnLimpiar = new Button("Limpiar", e -> {
-            limpiar(idField, nombreField, descripcionField);
-            grid.asSingleSelect().clear();
-        });
-
-        layout.add(form, crearAcciones(btnCrear, btnConsultar, btnActualizar, btnEliminar, btnLimpiar), grid);
+        Button eliminar = botonEliminar(grid, Apartamento.class, id, "Apartamento",
+                () -> limpiar(id, numero, torre, parqueadero, cuartoUtil, documentoResidente), refrescar);
+        layout.add(form, crearAcciones(crear, consultar, actualizar, eliminar,
+                botonLimpiar(grid, id, numero, torre, parqueadero, cuartoUtil, documentoResidente)), grid);
         return layout;
     }
 
-    // ==========================================
-    // 3. PROVEEDORES
-    // ==========================================
-    private Component crearSeccionProveedores() {
+    private Component crearSeccionPropiedades() {
         VerticalLayout layout = new VerticalLayout();
-        TextField idField = new TextField("ID");
-        TextField nombreField = new TextField("Nombre");
-        TextField contactoField = new TextField("Contacto");
-        TextField telefonoField = new TextField("Teléfono");
-        TextField emailField = new TextField("Email");
-        TextField direccionField = new TextField("Dirección");
+        TextField nit = new TextField("NIT");
+        nit.setReadOnly(true);
+        TextField nombre = new TextField("Nombre de la propiedad");
+        TextField direccion = new TextField("Dirección");
+        TextField ciudad = new TextField("Ciudad");
+        TextField departamento = new TextField("Departamento");
+        TextField idApartamento = new TextField("ID del apartamento");
+        FormLayout form = new FormLayout(nit, nombre, direccion, ciudad, departamento, idApartamento);
 
-        FormLayout form = new FormLayout(idField, nombreField, contactoField, telefonoField, emailField, direccionField);
-
-        Grid<Proveedor> grid = new Grid<>(Proveedor.class, false);
-        grid.addColumn(Proveedor::getId).setHeader("ID").setAutoWidth(true);
-        grid.addColumn(Proveedor::getNombre).setHeader("Nombre").setAutoWidth(true);
-        grid.addColumn(Proveedor::getContacto).setHeader("Contacto").setAutoWidth(true);
-        grid.addColumn(Proveedor::getTelefono).setHeader("Teléfono").setAutoWidth(true);
-        grid.addColumn(Proveedor::getEmail).setHeader("Email").setAutoWidth(true);
-        grid.addColumn(Proveedor::getDireccion).setHeader("Dirección").setAutoWidth(true);
-
-        Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Proveedor.class));
+        Grid<Propiedad> grid = new Grid<>(Propiedad.class, false);
+        grid.addColumn(Propiedad::getNit).setHeader("NIT").setAutoWidth(true);
+        grid.addColumn(Propiedad::getNombrePropiedad).setHeader("Nombre").setAutoWidth(true);
+        grid.addColumn(Propiedad::getDireccion).setHeader("Dirección").setAutoWidth(true);
+        grid.addColumn(Propiedad::getCiudad).setHeader("Ciudad").setAutoWidth(true);
+        grid.addColumn(Propiedad::getDepartamento).setHeader("Departamento").setAutoWidth(true);
+        grid.addColumn(Propiedad::getIdApto).setHeader("ID del apartamento").setAutoWidth(true);
+        Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Propiedad.class));
         refrescar.run();
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(propiedad -> {
+            nit.setValue(valor(propiedad.getNit()));
+            nombre.setValue(valor(propiedad.getNombrePropiedad()));
+            direccion.setValue(valor(propiedad.getDireccion()));
+            ciudad.setValue(valor(propiedad.getCiudad()));
+            departamento.setValue(valor(propiedad.getDepartamento()));
+            idApartamento.setValue(valor(propiedad.getIdApto()));
+        }));
 
-        grid.asSingleSelect().addValueChangeListener(e -> {
-            Proveedor p = e.getValue();
-            if (p != null) {
-                idField.setValue(p.getId() != null ? p.getId().toString() : "");
-                nombreField.setValue(p.getNombre() != null ? p.getNombre() : "");
-                contactoField.setValue(p.getContacto() != null ? p.getContacto() : "");
-                telefonoField.setValue(p.getTelefono() != null ? p.getTelefono() : "");
-                emailField.setValue(p.getEmail() != null ? p.getEmail() : "");
-                direccionField.setValue(p.getDireccion() != null ? p.getDireccion() : "");
-            }
-        });
-
-        Button btnCrear = new Button("Crear", e -> {
-            Proveedor p = new Proveedor(
-                nombreField.getValue(),
-                contactoField.getValue(),
-                telefonoField.getValue(),
-                emailField.getValue(),
-                direccionField.getValue()
-            );
-            crudService.guardar(p);
+        Button crear = botonCrear(() -> {
+            Propiedad propiedad = new Propiedad(null, nombre.getValue(), direccion.getValue(), ciudad.getValue(),
+                    departamento.getValue(), idApartamento.getValue());
+            crudService.guardar(propiedad);
             refrescar.run();
-            idField.setValue(p.getId() != null ? p.getId().toString() : "");
-            Notification.show("Proveedor guardado con ID: " + p.getId());
+            nit.setValue(valor(propiedad.getNit()));
+            Notification.show("Propiedad guardada con NIT: " + propiedad.getNit());
         });
-        btnCrear.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        Button btnConsultar = new Button("Consultar", e -> {
-            Proveedor p = crudService.buscarPorId(Proveedor.class, parseId(idField));
-            if (p != null) {
-                grid.asSingleSelect().setValue(p);
-                Notification.show("Encontrado: " + p.getNombre());
-            } else {
-                Notification.show("No encontrado");
+        Button consultar = botonConsultar(grid, Propiedad.class, nit, "Propiedad");
+        Button actualizar = new Button("Actualizar", event -> {
+            Long idValue = parseId(nit);
+            if (idValue == null) {
+                return;
             }
-        });
-
-        Button btnActualizar = new Button("Actualizar", e -> {
-            Proveedor p = crudService.buscarPorId(Proveedor.class, parseId(idField));
-            if (p != null) {
-                p.setNombre(nombreField.getValue());
-                p.setContacto(contactoField.getValue());
-                p.setTelefono(telefonoField.getValue());
-                p.setEmail(emailField.getValue());
-                p.setDireccion(direccionField.getValue());
-                crudService.actualizar(p);
-                refrescar.run();
-                Notification.show("Proveedor actualizado");
-            } else {
-                Notification.show("ID no encontrado");
+            Propiedad propiedad = crudService.buscarPorId(Propiedad.class, idValue);
+            if (propiedad == null) {
+                Notification.show("No se encontró la propiedad");
+                return;
             }
-        });
-
-        Button btnEliminar = new Button("Eliminar", e -> {
-            crudService.eliminar(Proveedor.class, parseId(idField));
+            propiedad.setNombrePropiedad(nombre.getValue());
+            propiedad.setDireccion(direccion.getValue());
+            propiedad.setCiudad(ciudad.getValue());
+            propiedad.setDepartamento(departamento.getValue());
+            propiedad.setIdApto(idApartamento.getValue());
+            crudService.actualizar(propiedad);
             refrescar.run();
-            limpiar(idField, nombreField, contactoField, telefonoField, emailField, direccionField);
-            Notification.show("Proveedor eliminado");
+            Notification.show("Propiedad actualizada");
         });
-        btnEliminar.addThemeVariants(ButtonVariant.LUMO_ERROR);
-
-        Button btnLimpiar = new Button("Limpiar", e -> {
-            limpiar(idField, nombreField, contactoField, telefonoField, emailField, direccionField);
-            grid.asSingleSelect().clear();
-        });
-
-        layout.add(form, crearAcciones(btnCrear, btnConsultar, btnActualizar, btnEliminar, btnLimpiar), grid);
+        Button eliminar = botonEliminar(grid, Propiedad.class, nit, "Propiedad",
+                () -> limpiar(nit, nombre, direccion, ciudad, departamento, idApartamento), refrescar);
+        layout.add(form, crearAcciones(crear, consultar, actualizar, eliminar,
+                botonLimpiar(grid, nit, nombre, direccion, ciudad, departamento, idApartamento)), grid);
         return layout;
     }
 
-    // ==========================================
-    // 4. USUARIOS
-    // ==========================================
+    private Component crearSeccionResidentes() {
+        VerticalLayout layout = new VerticalLayout();
+        TextField documento = new TextField("Documento");
+        documento.setReadOnly(true);
+        TextField nombre = new TextField("Nombre");
+        TextField apellidos = new TextField("Apellidos");
+        DatePicker fechaNacimiento = new DatePicker("Fecha de nacimiento");
+        TextField celular = new TextField("Celular");
+        TextField correo = new TextField("Correo");
+        FormLayout form = new FormLayout(documento, nombre, apellidos, fechaNacimiento, celular, correo);
+
+        Grid<Residente> grid = new Grid<>(Residente.class, false);
+        grid.addColumn(Residente::getDocumento).setHeader("Documento").setAutoWidth(true);
+        grid.addColumn(Residente::getNombre).setHeader("Nombre").setAutoWidth(true);
+        grid.addColumn(Residente::getApellidos).setHeader("Apellidos").setAutoWidth(true);
+        grid.addColumn(Residente::getFechaDeNacimiento).setHeader("Fecha de nacimiento").setAutoWidth(true);
+        grid.addColumn(Residente::getCelular).setHeader("Celular").setAutoWidth(true);
+        grid.addColumn(Residente::getCorreo).setHeader("Correo").setAutoWidth(true);
+        Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Residente.class));
+        refrescar.run();
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(residente -> {
+            documento.setValue(valor(residente.getDocumento()));
+            nombre.setValue(valor(residente.getNombre()));
+            apellidos.setValue(valor(residente.getApellidos()));
+            fechaNacimiento.setValue(residente.getFechaDeNacimiento());
+            celular.setValue(valor(residente.getCelular()));
+            correo.setValue(valor(residente.getCorreo()));
+        }));
+
+        Button crear = botonCrear(() -> {
+            if (!validar(fechaNacimiento.getValue(), "Seleccione la fecha de nacimiento")) {
+                return;
+            }
+            Residente residente = new Residente(null, nombre.getValue(), apellidos.getValue(),
+                    fechaNacimiento.getValue(), celular.getValue(), correo.getValue());
+            crudService.guardar(residente);
+            refrescar.run();
+            documento.setValue(valor(residente.getDocumento()));
+            Notification.show("Residente guardado con documento: " + residente.getDocumento());
+        });
+        Button consultar = botonConsultar(grid, Residente.class, documento, "Residente");
+        Button actualizar = new Button("Actualizar", event -> {
+            Long idValue = parseId(documento);
+            if (idValue == null || !validar(fechaNacimiento.getValue(), "Seleccione la fecha de nacimiento")) {
+                return;
+            }
+            Residente residente = crudService.buscarPorId(Residente.class, idValue);
+            if (residente == null) {
+                Notification.show("No se encontró el residente");
+                return;
+            }
+            residente.setNombre(nombre.getValue());
+            residente.setApellidos(apellidos.getValue());
+            residente.setFechaDeNacimiento(fechaNacimiento.getValue());
+            residente.setCelular(celular.getValue());
+            residente.setCorreo(correo.getValue());
+            crudService.actualizar(residente);
+            refrescar.run();
+            Notification.show("Residente actualizado");
+        });
+        Button eliminar = botonEliminar(grid, Residente.class, documento, "Residente",
+                () -> {
+                    limpiar(documento, nombre, apellidos, celular, correo);
+                    fechaNacimiento.clear();
+                }, refrescar);
+        layout.add(form, crearAcciones(crear, consultar, actualizar, eliminar,
+                botonLimpiar(grid, documento, nombre, apellidos, celular, correo, fechaNacimiento)), grid);
+        return layout;
+    }
+
     private Component crearSeccionUsuarios() {
         VerticalLayout layout = new VerticalLayout();
-        TextField idField = new TextField("ID");
-        TextField nombreField = new TextField("Nombre");
-        TextField apellidoField = new TextField("Apellido");
-        TextField emailField = new TextField("Email");
-        TextField telefonoField = new TextField("Teléfono");
-        TextField direccionField = new TextField("Dirección");
-        TextField rolField = new TextField("Rol");
-        TextField estadoField = new TextField("Estado");
-
-        FormLayout form = new FormLayout(idField, nombreField, apellidoField, emailField, telefonoField, direccionField, rolField, estadoField);
+        TextField id = new TextField("ID");
+        id.setReadOnly(true);
+        TextField nombre = new TextField("Nombre");
+        TextField apellido = new TextField("Apellido");
+        TextField email = new TextField("Email");
+        TextField telefono = new TextField("Teléfono");
+        TextField direccion = new TextField("Dirección");
+        TextField rol = new TextField("Rol");
+        TextField estado = new TextField("Estado");
+        FormLayout form = new FormLayout(id, nombre, apellido, email, telefono, direccion, rol, estado);
 
         Grid<Usuario> grid = new Grid<>(Usuario.class, false);
         grid.addColumn(Usuario::getId).setHeader("ID").setAutoWidth(true);
@@ -334,119 +361,149 @@ public class MainView extends VerticalLayout {
         grid.addColumn(Usuario::getApellido).setHeader("Apellido").setAutoWidth(true);
         grid.addColumn(Usuario::getEmail).setHeader("Email").setAutoWidth(true);
         grid.addColumn(Usuario::getTelefono).setHeader("Teléfono").setAutoWidth(true);
+        grid.addColumn(Usuario::getDireccion).setHeader("Dirección").setAutoWidth(true);
         grid.addColumn(Usuario::getRol).setHeader("Rol").setAutoWidth(true);
         grid.addColumn(Usuario::getEstado).setHeader("Estado").setAutoWidth(true);
-
+        grid.addColumn(Usuario::getFechaRegistro).setHeader("Fecha de registro").setAutoWidth(true);
         Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Usuario.class));
         refrescar.run();
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(usuario -> {
+            id.setValue(valor(usuario.getId()));
+            nombre.setValue(valor(usuario.getNombre()));
+            apellido.setValue(valor(usuario.getApellido()));
+            email.setValue(valor(usuario.getEmail()));
+            telefono.setValue(valor(usuario.getTelefono()));
+            direccion.setValue(valor(usuario.getDireccion()));
+            rol.setValue(valor(usuario.getRol()));
+            estado.setValue(valor(usuario.getEstado()));
+        }));
 
-        grid.asSingleSelect().addValueChangeListener(e -> {
-            Usuario u = e.getValue();
-            if (u != null) {
-                idField.setValue(u.getId() != null ? u.getId().toString() : "");
-                nombreField.setValue(u.getNombre() != null ? u.getNombre() : "");
-                apellidoField.setValue(u.getApellido() != null ? u.getApellido() : "");
-                emailField.setValue(u.getEmail() != null ? u.getEmail() : "");
-                telefonoField.setValue(u.getTelefono() != null ? u.getTelefono() : "");
-                direccionField.setValue(u.getDireccion() != null ? u.getDireccion() : "");
-                rolField.setValue(u.getRol() != null ? u.getRol() : "");
-                estadoField.setValue(u.getEstado() != null ? u.getEstado() : "");
-            }
-        });
-
-        Button btnCrear = new Button("Crear", e -> {
-            Usuario u = new Usuario(
-                nombreField.getValue(),
-                apellidoField.getValue(),
-                emailField.getValue(),
-                telefonoField.getValue(),
-                direccionField.getValue(),
-                rolField.getValue(),
-                estadoField.getValue(),
-                LocalDateTime.now()
-            );
-            crudService.guardar(u);
+        Button crear = botonCrear(() -> {
+            Usuario usuario = new Usuario(nombre.getValue(), apellido.getValue(), email.getValue(),
+                    telefono.getValue(), direccion.getValue(), rol.getValue(), estado.getValue(), LocalDateTime.now());
+            crudService.guardar(usuario);
             refrescar.run();
-            idField.setValue(u.getId() != null ? u.getId().toString() : "");
-            Notification.show("Usuario guardado con ID: " + u.getId());
+            id.setValue(valor(usuario.getId()));
+            Notification.show("Usuario guardado con ID: " + usuario.getId());
         });
-        btnCrear.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-        Button btnConsultar = new Button("Consultar", e -> {
-            Usuario u = crudService.buscarPorId(Usuario.class, parseId(idField));
-            if (u != null) {
-                grid.asSingleSelect().setValue(u);
-                Notification.show("Encontrado: " + u.getNombre() + " " + u.getApellido());
-            } else {
-                Notification.show("No encontrado");
+        Button consultar = botonConsultar(grid, Usuario.class, id, "Usuario");
+        Button actualizar = new Button("Actualizar", event -> {
+            Long idValue = parseId(id);
+            if (idValue == null) {
+                return;
             }
-        });
-
-        Button btnActualizar = new Button("Actualizar", e -> {
-            Usuario u = crudService.buscarPorId(Usuario.class, parseId(idField));
-            if (u != null) {
-                u.setNombre(nombreField.getValue());
-                u.setApellido(apellidoField.getValue());
-                u.setEmail(emailField.getValue());
-                u.setTelefono(telefonoField.getValue());
-                u.setDireccion(direccionField.getValue());
-                u.setRol(rolField.getValue());
-                u.setEstado(estadoField.getValue());
-                crudService.actualizar(u);
-                refrescar.run();
-                Notification.show("Usuario actualizado");
-            } else {
-                Notification.show("ID no encontrado");
+            Usuario usuario = crudService.buscarPorId(Usuario.class, idValue);
+            if (usuario == null) {
+                Notification.show("No se encontró el usuario");
+                return;
             }
-        });
-
-        Button btnEliminar = new Button("Eliminar", e -> {
-            crudService.eliminar(Usuario.class, parseId(idField));
+            usuario.setNombre(nombre.getValue());
+            usuario.setApellido(apellido.getValue());
+            usuario.setEmail(email.getValue());
+            usuario.setTelefono(telefono.getValue());
+            usuario.setDireccion(direccion.getValue());
+            usuario.setRol(rol.getValue());
+            usuario.setEstado(estado.getValue());
+            crudService.actualizar(usuario);
             refrescar.run();
-            limpiar(idField, nombreField, apellidoField, emailField, telefonoField, direccionField, rolField, estadoField);
-            Notification.show("Usuario eliminado");
+            Notification.show("Usuario actualizado");
         });
-        btnEliminar.addThemeVariants(ButtonVariant.LUMO_ERROR);
-
-        Button btnLimpiar = new Button("Limpiar", e -> {
-            limpiar(idField, nombreField, apellidoField, emailField, telefonoField, direccionField, rolField, estadoField);
-            grid.asSingleSelect().clear();
-        });
-
-        layout.add(form, crearAcciones(btnCrear, btnConsultar, btnActualizar, btnEliminar, btnLimpiar), grid);
+        Button eliminar = botonEliminar(grid, Usuario.class, id, "Usuario",
+                () -> limpiar(id, nombre, apellido, email, telefono, direccion, rol, estado), refrescar);
+        layout.add(form, crearAcciones(crear, consultar, actualizar, eliminar,
+                botonLimpiar(grid, id, nombre, apellido, email, telefono, direccion, rol, estado)), grid);
         return layout;
     }
 
-    // ==========================================
-    // MÉTODOS AUXILIARES
-    // ==========================================
+    private <T> Button botonConsultar(Grid<T> grid, Class<T> tipo, TextField id, String entidad) {
+        return new Button("Consultar", event -> {
+            Long idValue = parseId(id);
+            if (idValue == null) {
+                return;
+            }
+            T registro = crudService.buscarPorId(tipo, idValue);
+            if (registro == null) {
+                Notification.show("No se encontró " + entidad.toLowerCase());
+            } else {
+                grid.select(registro);
+            }
+        });
+    }
+
+    private <T> Button botonEliminar(Grid<T> grid, Class<T> tipo, TextField id, String entidad,
+            Runnable limpiarCampos, Runnable refrescar) {
+        Button boton = new Button("Eliminar", event -> {
+            Long idValue = parseId(id);
+            if (idValue == null) {
+                return;
+            }
+            if (crudService.eliminar(tipo, idValue)) {
+                refrescar.run();
+                limpiarCampos.run();
+                grid.deselectAll();
+                Notification.show(entidad + " eliminado");
+            } else {
+                Notification.show("No se encontró " + entidad.toLowerCase());
+            }
+        });
+        boton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+        return boton;
+    }
+
+    private Button botonCrear(Runnable accion) {
+        Button boton = new Button("Crear", event -> accion.run());
+        boton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        return boton;
+    }
+
+    private Button botonLimpiar(Grid<?> grid, Component... campos) {
+        return new Button("Limpiar", event -> {
+            limpiar(campos);
+            grid.deselectAll();
+        });
+    }
+
     private Long parseId(TextField field) {
+        String value = field.getValue().trim();
+        if (value.isEmpty()) {
+            Notification.show("Ingrese un identificador");
+            return null;
+        }
         try {
-            return Long.parseLong(field.getValue().trim());
-        } catch (Exception e) {
+            return Long.parseLong(value);
+        } catch (NumberFormatException exception) {
+            Notification.show("El identificador debe ser numérico");
             return null;
         }
     }
 
-    private Double parseDouble(String val) {
-        try {
-            return Double.parseDouble(val.trim());
-        } catch (Exception e) {
-            return 0.0;
+    private boolean validar(String value, String mensaje) {
+        if (value == null || value.isBlank()) {
+            Notification.show(mensaje);
+            return false;
         }
+        return true;
     }
 
-    private Integer parseInt(String val) {
-        try {
-            return Integer.parseInt(val.trim());
-        } catch (Exception e) {
-            return 0;
+    private boolean validar(LocalDate value, String mensaje) {
+        if (value == null) {
+            Notification.show(mensaje);
+            return false;
         }
+        return true;
     }
 
-    private void limpiar(TextField... campos) {
-        for (TextField c : campos) {
-            c.clear();
+    private String valor(Object value) {
+        return value == null ? "" : value.toString();
+    }
+
+    private void limpiar(Component... campos) {
+        for (Component campo : campos) {
+            if (campo instanceof TextField textField) {
+                textField.clear();
+            } else if (campo instanceof DatePicker datePicker) {
+                datePicker.clear();
+            }
         }
     }
 
