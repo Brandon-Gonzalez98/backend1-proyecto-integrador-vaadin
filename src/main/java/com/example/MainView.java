@@ -1,7 +1,10 @@
 package com.example;
 
+import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.function.Function;
 
 import com.example.model.Administrador;
 import com.example.model.Apartamento;
@@ -9,18 +12,21 @@ import com.example.model.Propiedad;
 import com.example.model.Residente;
 import com.example.model.Usuario;
 import com.example.service.CrudService;
+import com.example.service.ExportService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
@@ -29,9 +35,11 @@ import com.vaadin.flow.router.Route;
 public class MainView extends VerticalLayout {
 
     private final CrudService crudService;
+    private final ExportService exportService;
 
-    public MainView(CrudService crudService) {
+    public MainView(CrudService crudService, ExportService exportService) {
         this.crudService = crudService;
+        this.exportService = exportService;
         setSizeFull();
         setPadding(true);
         setSpacing(true);
@@ -139,7 +147,13 @@ public class MainView extends VerticalLayout {
             }
         });
         eliminar.addThemeVariants(ButtonVariant.LUMO_ERROR);
-        layout.add(form, crearAcciones(crear, consultar, actualizar, eliminar,
+        layout.add(crearDescargas("Administradores", "administradores", Administrador.class,
+                        List.of("Documento", "Nombre", "Apellidos", "Fecha de nacimiento", "Celular", "Correo", "NIT"),
+                        administrador -> List.of(valor(administrador.getDocumento()), valor(administrador.getNombre()),
+                                valor(administrador.getApellidos()), valor(administrador.getFechaDeNacimiento()),
+                                valor(administrador.getCelular()), valor(administrador.getCorreo()),
+                                valor(administrador.getNit()))),
+                form, crearAcciones(crear, consultar, actualizar, eliminar,
                 botonLimpiar(grid, documento, nombre, apellidos, celular, correo, nit, fechaNacimiento)), grid);
         return layout;
     }
@@ -203,7 +217,12 @@ public class MainView extends VerticalLayout {
         });
         Button eliminar = botonEliminar(grid, Apartamento.class, id, "Apartamento",
                 () -> limpiar(id, numero, torre, parqueadero, cuartoUtil, documentoResidente), refrescar);
-        layout.add(form, crearAcciones(crear, consultar, actualizar, eliminar,
+        layout.add(crearDescargas("Apartamentos", "apartamentos", Apartamento.class,
+                        List.of("ID", "Número", "Torre", "Parqueadero", "Cuarto útil", "Documento del residente"),
+                        apartamento -> List.of(valor(apartamento.getIdApto()), valor(apartamento.getNumeroApto()),
+                                valor(apartamento.getTorre()), valor(apartamento.getParqueadero()),
+                                valor(apartamento.getCuartoUtil()), valor(apartamento.getIdDocumento()))),
+                form, crearAcciones(crear, consultar, actualizar, eliminar,
                 botonLimpiar(grid, id, numero, torre, parqueadero, cuartoUtil, documentoResidente)), grid);
         return layout;
     }
@@ -267,7 +286,12 @@ public class MainView extends VerticalLayout {
         });
         Button eliminar = botonEliminar(grid, Propiedad.class, nit, "Propiedad",
                 () -> limpiar(nit, nombre, direccion, ciudad, departamento, idApartamento), refrescar);
-        layout.add(form, crearAcciones(crear, consultar, actualizar, eliminar,
+        layout.add(crearDescargas("Propiedades", "propiedades", Propiedad.class,
+                        List.of("NIT", "Nombre", "Dirección", "Ciudad", "Departamento", "ID del apartamento"),
+                        propiedad -> List.of(valor(propiedad.getNit()), valor(propiedad.getNombrePropiedad()),
+                                valor(propiedad.getDireccion()), valor(propiedad.getCiudad()),
+                                valor(propiedad.getDepartamento()), valor(propiedad.getIdApto()))),
+                form, crearAcciones(crear, consultar, actualizar, eliminar,
                 botonLimpiar(grid, nit, nombre, direccion, ciudad, departamento, idApartamento)), grid);
         return layout;
     }
@@ -337,7 +361,12 @@ public class MainView extends VerticalLayout {
                     limpiar(documento, nombre, apellidos, celular, correo);
                     fechaNacimiento.clear();
                 }, refrescar);
-        layout.add(form, crearAcciones(crear, consultar, actualizar, eliminar,
+        layout.add(crearDescargas("Residentes", "residentes", Residente.class,
+                        List.of("Documento", "Nombre", "Apellidos", "Fecha de nacimiento", "Celular", "Correo"),
+                        residente -> List.of(valor(residente.getDocumento()), valor(residente.getNombre()),
+                                valor(residente.getApellidos()), valor(residente.getFechaDeNacimiento()),
+                                valor(residente.getCelular()), valor(residente.getCorreo()))),
+                form, crearAcciones(crear, consultar, actualizar, eliminar,
                 botonLimpiar(grid, documento, nombre, apellidos, celular, correo, fechaNacimiento)), grid);
         return layout;
     }
@@ -410,7 +439,14 @@ public class MainView extends VerticalLayout {
         });
         Button eliminar = botonEliminar(grid, Usuario.class, id, "Usuario",
                 () -> limpiar(id, nombre, apellido, email, telefono, direccion, rol, estado), refrescar);
-        layout.add(form, crearAcciones(crear, consultar, actualizar, eliminar,
+        layout.add(crearDescargas("Usuarios", "usuarios", Usuario.class,
+                        List.of("ID", "Nombre", "Apellido", "Email", "Teléfono", "Dirección", "Rol", "Estado",
+                                "Fecha de registro"),
+                        usuario -> List.of(valor(usuario.getId()), valor(usuario.getNombre()),
+                                valor(usuario.getApellido()), valor(usuario.getEmail()), valor(usuario.getTelefono()),
+                                valor(usuario.getDireccion()), valor(usuario.getRol()), valor(usuario.getEstado()),
+                                valor(usuario.getFechaRegistro()))),
+                form, crearAcciones(crear, consultar, actualizar, eliminar,
                 botonLimpiar(grid, id, nombre, apellido, email, telefono, direccion, rol, estado)), grid);
         return layout;
     }
@@ -428,6 +464,33 @@ public class MainView extends VerticalLayout {
                 grid.select(registro);
             }
         });
+    }
+
+    private <T> HorizontalLayout crearDescargas(String titulo, String nombreArchivo, Class<T> tipo,
+            List<String> encabezados, Function<T, List<String>> convertirFila) {
+        StreamResource recursoPdf = new StreamResource(nombreArchivo + ".pdf", () -> {
+            List<List<String>> filas = crudService.listarTodos(tipo).stream().map(convertirFila).toList();
+            return new ByteArrayInputStream(exportService.generarPdf(titulo, encabezados, filas));
+        });
+        recursoPdf.setContentType("application/pdf");
+
+        StreamResource recursoExcel = new StreamResource(nombreArchivo + ".xlsx", () -> {
+            List<List<String>> filas = crudService.listarTodos(tipo).stream().map(convertirFila).toList();
+            return new ByteArrayInputStream(exportService.generarExcel(titulo, encabezados, filas));
+        });
+        recursoExcel.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+        Anchor descargarPdf = new Anchor(recursoPdf, "Descargar PDF");
+        descargarPdf.getElement().setAttribute("download", true);
+        descargarPdf.getElement().setAttribute("theme", "button");
+
+        Anchor descargarExcel = new Anchor(recursoExcel, "Descargar Excel");
+        descargarExcel.getElement().setAttribute("download", true);
+        descargarExcel.getElement().setAttribute("theme", "button");
+
+        HorizontalLayout descargas = new HorizontalLayout(descargarPdf, descargarExcel);
+        descargas.getStyle().set("flex-wrap", "wrap");
+        return descargas;
     }
 
     private <T> Button botonEliminar(Grid<T> grid, Class<T> tipo, TextField id, String entidad,
