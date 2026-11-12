@@ -34,6 +34,10 @@ public class Apartamento {
     public Apartamento() {
     }
 
+     // ===================
+    // Getters y setters
+    // ===================
+    
     public Long getIdApto() {
         return IdApto;
     }

@@ -8,7 +8,10 @@ import java.util.function.Function;
 
 import com.example.model.Administrador;
 import com.example.model.Apartamento;
+import com.example.model.CuartoUtil;
+import com.example.model.Parqueadero;
 import com.example.model.Propiedad;
+import com.example.model.Propietario;
 import com.example.model.Residente;
 import com.example.model.Usuario;
 import com.example.service.CrudService;
@@ -48,7 +51,10 @@ public class MainView extends VerticalLayout {
         tabs.setWidthFull();
         tabs.add("Administradores", crearSeccionAdministradores());
         tabs.add("Apartamentos", crearSeccionApartamentos());
+        tabs.add("Cuartos útiles", crearSeccionCuartosUtiles());
+        tabs.add("Parqueaderos", crearSeccionParqueaderos());
         tabs.add("Propiedades", crearSeccionPropiedades());
+        tabs.add("Propietarios", crearSeccionPropietarios());
         tabs.add("Residentes", crearSeccionResidentes());
         tabs.add("Usuarios", crearSeccionUsuarios());
 
@@ -296,19 +302,229 @@ public class MainView extends VerticalLayout {
         return layout;
     }
 
+    private Component crearSeccionPropietarios() {
+        VerticalLayout layout = new VerticalLayout();
+        TextField id = new TextField("ID del propietario");
+        id.setReadOnly(true);
+        TextField nombre = new TextField("Nombre");
+        TextField apellido = new TextField("Apellido");
+        DatePicker fechaNacimiento = new DatePicker("Fecha de nacimiento");
+        TextField celular = new TextField("Celular");
+        TextField mail = new TextField("Correo");
+        TextField reside = new TextField("¿Reside en la propiedad?");
+        FormLayout form = new FormLayout(id, nombre, apellido, fechaNacimiento, celular, mail, reside);
+
+        Grid<Propietario> grid = new Grid<>(Propietario.class, false);
+        grid.addColumn(Propietario::getIdPropietario).setHeader("ID").setAutoWidth(true);
+        grid.addColumn(Propietario::getNombre).setHeader("Nombre").setAutoWidth(true);
+        grid.addColumn(Propietario::getApellido).setHeader("Apellido").setAutoWidth(true);
+        grid.addColumn(Propietario::getFechaNacimiento).setHeader("Fecha de nacimiento").setAutoWidth(true);
+        grid.addColumn(Propietario::getCelular).setHeader("Celular").setAutoWidth(true);
+        grid.addColumn(Propietario::getMail).setHeader("Correo").setAutoWidth(true);
+        grid.addColumn(Propietario::getReside).setHeader("Reside").setAutoWidth(true);
+        Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Propietario.class));
+        refrescar.run();
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(propietario -> {
+            id.setValue(valor(propietario.getIdPropietario()));
+            nombre.setValue(valor(propietario.getNombre()));
+            apellido.setValue(valor(propietario.getApellido()));
+            fechaNacimiento.setValue(propietario.getFechaNacimiento());
+            celular.setValue(valor(propietario.getCelular()));
+            mail.setValue(valor(propietario.getMail()));
+            reside.setValue(valor(propietario.getReside()));
+        }));
+
+        Button crear = botonCrear(() -> {
+            if (!validar(fechaNacimiento.getValue(), "Seleccione la fecha de nacimiento")) {
+                return;
+            }
+            Propietario propietario = new Propietario(null, nombre.getValue(), apellido.getValue(),
+                    fechaNacimiento.getValue(), celular.getValue(), mail.getValue(), reside.getValue());
+            crudService.guardar(propietario);
+            refrescar.run();
+            id.setValue(valor(propietario.getIdPropietario()));
+            Notification.show("Propietario guardado con ID: " + propietario.getIdPropietario());
+        });
+        Button consultar = botonConsultar(grid, Propietario.class, id, "Propietario");
+        Button actualizar = new Button("Actualizar", event -> {
+            Long idValue = parseId(id);
+            if (idValue == null || !validar(fechaNacimiento.getValue(), "Seleccione la fecha de nacimiento")) {
+                return;
+            }
+            Propietario propietario = crudService.buscarPorId(Propietario.class, idValue);
+            if (propietario == null) {
+                Notification.show("No se encontró el propietario");
+                return;
+            }
+            propietario.setNombre(nombre.getValue());
+            propietario.setApellido(apellido.getValue());
+            propietario.setFechaNacimiento(fechaNacimiento.getValue());
+            propietario.setCelular(celular.getValue());
+            propietario.setMail(mail.getValue());
+            propietario.setReside(reside.getValue());
+            crudService.actualizar(propietario);
+            refrescar.run();
+            Notification.show("Propietario actualizado");
+        });
+        Button eliminar = botonEliminar(grid, Propietario.class, id, "Propietario",
+                () -> {
+                    limpiar(id, nombre, apellido, celular, mail, reside);
+                    fechaNacimiento.clear();
+                }, refrescar);
+        layout.add(crearDescargas("Propietarios", "propietarios", Propietario.class,
+                        List.of("ID", "Nombre", "Apellido", "Fecha de nacimiento", "Celular", "Correo", "Reside"),
+                        propietario -> List.of(valor(propietario.getIdPropietario()), valor(propietario.getNombre()),
+                                valor(propietario.getApellido()), valor(propietario.getFechaNacimiento()),
+                                valor(propietario.getCelular()), valor(propietario.getMail()),
+                                valor(propietario.getReside()))),
+                form, crearAcciones(crear, consultar, actualizar, eliminar,
+                        botonLimpiar(grid, id, nombre, apellido, fechaNacimiento, celular, mail, reside)), grid);
+        return layout;
+    }
+
+    private Component crearSeccionParqueaderos() {
+        VerticalLayout layout = new VerticalLayout();
+        TextField id = new TextField("ID del parqueadero");
+        id.setReadOnly(true);
+        TextField tipo = new TextField("Tipo");
+        TextField idPropietario = new TextField("ID del propietario");
+        TextField idResidente = new TextField("ID del residente");
+        TextField idApartamento = new TextField("ID del apartamento");
+        FormLayout form = new FormLayout(id, tipo, idPropietario, idResidente, idApartamento);
+
+        Grid<Parqueadero> grid = new Grid<>(Parqueadero.class, false);
+        grid.addColumn(Parqueadero::getIdParqueadero).setHeader("ID").setAutoWidth(true);
+        grid.addColumn(Parqueadero::getTipo).setHeader("Tipo").setAutoWidth(true);
+        grid.addColumn(Parqueadero::getIdPopietario).setHeader("ID del propietario").setAutoWidth(true);
+        grid.addColumn(Parqueadero::getIdResidente).setHeader("ID del residente").setAutoWidth(true);
+        grid.addColumn(Parqueadero::getIdApto).setHeader("ID del apartamento").setAutoWidth(true);
+        Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Parqueadero.class));
+        refrescar.run();
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(parqueadero -> {
+            id.setValue(valor(parqueadero.getIdParqueadero()));
+            tipo.setValue(valor(parqueadero.getTipo()));
+            idPropietario.setValue(valor(parqueadero.getIdPopietario()));
+            idResidente.setValue(valor(parqueadero.getIdResidente()));
+            idApartamento.setValue(valor(parqueadero.getIdApto()));
+        }));
+
+        Button crear = botonCrear(() -> {
+            Parqueadero parqueadero = new Parqueadero(null, tipo.getValue(), idPropietario.getValue(),
+                    idResidente.getValue(), idApartamento.getValue());
+            crudService.guardar(parqueadero);
+            refrescar.run();
+            id.setValue(valor(parqueadero.getIdParqueadero()));
+            Notification.show("Parqueadero guardado con ID: " + parqueadero.getIdParqueadero());
+        });
+        Button consultar = botonConsultar(grid, Parqueadero.class, id, "Parqueadero");
+        Button actualizar = new Button("Actualizar", event -> {
+            Long idValue = parseId(id);
+            if (idValue == null) {
+                return;
+            }
+            Parqueadero parqueadero = crudService.buscarPorId(Parqueadero.class, idValue);
+            if (parqueadero == null) {
+                Notification.show("No se encontró el parqueadero");
+                return;
+            }
+            parqueadero.setTipo(tipo.getValue());
+            parqueadero.setIdPopietario(idPropietario.getValue());
+            parqueadero.setIdResidente(idResidente.getValue());
+            parqueadero.setIdApto(idApartamento.getValue());
+            crudService.actualizar(parqueadero);
+            refrescar.run();
+            Notification.show("Parqueadero actualizado");
+        });
+        Button eliminar = botonEliminar(grid, Parqueadero.class, id, "Parqueadero",
+                () -> limpiar(id, tipo, idPropietario, idResidente, idApartamento), refrescar);
+        layout.add(crearDescargas("Parqueaderos", "parqueaderos", Parqueadero.class,
+                        List.of("ID", "Tipo", "ID del propietario", "ID del residente", "ID del apartamento"),
+                        parqueadero -> List.of(valor(parqueadero.getIdParqueadero()), valor(parqueadero.getTipo()),
+                                valor(parqueadero.getIdPopietario()), valor(parqueadero.getIdResidente()),
+                                valor(parqueadero.getIdApto()))),
+                form, crearAcciones(crear, consultar, actualizar, eliminar,
+                        botonLimpiar(grid, id, tipo, idPropietario, idResidente, idApartamento)), grid);
+        return layout;
+    }
+
+    private Component crearSeccionCuartosUtiles() {
+        VerticalLayout layout = new VerticalLayout();
+        TextField id = new TextField("ID del cuarto útil");
+        id.setReadOnly(true);
+        TextField area = new TextField("Área");
+        TextField idPropietario = new TextField("ID del propietario");
+        TextField idResidente = new TextField("ID del residente");
+        TextField idApartamento = new TextField("ID del apartamento");
+        FormLayout form = new FormLayout(id, area, idPropietario, idResidente, idApartamento);
+
+        Grid<CuartoUtil> grid = new Grid<>(CuartoUtil.class, false);
+        grid.addColumn(CuartoUtil::getIdCuartoUtil).setHeader("ID").setAutoWidth(true);
+        grid.addColumn(CuartoUtil::getArea).setHeader("Área").setAutoWidth(true);
+        grid.addColumn(CuartoUtil::getIdPopietario).setHeader("ID del propietario").setAutoWidth(true);
+        grid.addColumn(CuartoUtil::getIdResidente).setHeader("ID del residente").setAutoWidth(true);
+        grid.addColumn(CuartoUtil::getIdApto).setHeader("ID del apartamento").setAutoWidth(true);
+        Runnable refrescar = () -> grid.setItems(crudService.listarTodos(CuartoUtil.class));
+        refrescar.run();
+        grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(cuarto -> {
+            id.setValue(valor(cuarto.getIdCuartoUtil()));
+            area.setValue(valor(cuarto.getArea()));
+            idPropietario.setValue(valor(cuarto.getIdPopietario()));
+            idResidente.setValue(valor(cuarto.getIdResidente()));
+            idApartamento.setValue(valor(cuarto.getIdApto()));
+        }));
+
+        Button crear = botonCrear(() -> {
+            CuartoUtil cuarto = new CuartoUtil(null, area.getValue(), idPropietario.getValue(),
+                    idResidente.getValue(), idApartamento.getValue());
+            crudService.guardar(cuarto);
+            refrescar.run();
+            id.setValue(valor(cuarto.getIdCuartoUtil()));
+            Notification.show("Cuarto útil guardado con ID: " + cuarto.getIdCuartoUtil());
+        });
+        Button consultar = botonConsultar(grid, CuartoUtil.class, id, "Cuarto útil");
+        Button actualizar = new Button("Actualizar", event -> {
+            Long idValue = parseId(id);
+            if (idValue == null) {
+                return;
+            }
+            CuartoUtil cuarto = crudService.buscarPorId(CuartoUtil.class, idValue);
+            if (cuarto == null) {
+                Notification.show("No se encontró el cuarto útil");
+                return;
+            }
+            cuarto.setArea(area.getValue());
+            cuarto.setIdPopietario(idPropietario.getValue());
+            cuarto.setIdResidente(idResidente.getValue());
+            cuarto.setIdApto(idApartamento.getValue());
+            crudService.actualizar(cuarto);
+            refrescar.run();
+            Notification.show("Cuarto útil actualizado");
+        });
+        Button eliminar = botonEliminar(grid, CuartoUtil.class, id, "Cuarto útil",
+                () -> limpiar(id, area, idPropietario, idResidente, idApartamento), refrescar);
+        layout.add(crearDescargas("Cuartos útiles", "cuartos-utiles", CuartoUtil.class,
+                        List.of("ID", "Área", "ID del propietario", "ID del residente", "ID del apartamento"),
+                        cuarto -> List.of(valor(cuarto.getIdCuartoUtil()), valor(cuarto.getArea()),
+                                valor(cuarto.getIdPopietario()), valor(cuarto.getIdResidente()),
+                                valor(cuarto.getIdApto()))),
+                form, crearAcciones(crear, consultar, actualizar, eliminar,
+                        botonLimpiar(grid, id, area, idPropietario, idResidente, idApartamento)), grid);
+        return layout;
+    }
+
     private Component crearSeccionResidentes() {
         VerticalLayout layout = new VerticalLayout();
-        TextField documento = new TextField("Documento");
-        documento.setReadOnly(true);
+        TextField id = new TextField("ID del residente");
+        id.setReadOnly(true);
         TextField nombre = new TextField("Nombre");
         TextField apellidos = new TextField("Apellidos");
         DatePicker fechaNacimiento = new DatePicker("Fecha de nacimiento");
         TextField celular = new TextField("Celular");
         TextField correo = new TextField("Correo");
-        FormLayout form = new FormLayout(documento, nombre, apellidos, fechaNacimiento, celular, correo);
+        FormLayout form = new FormLayout(id, nombre, apellidos, fechaNacimiento, celular, correo);
 
         Grid<Residente> grid = new Grid<>(Residente.class, false);
-        grid.addColumn(Residente::getDocumento).setHeader("Documento").setAutoWidth(true);
+        grid.addColumn(Residente::getIdResidente).setHeader("ID").setAutoWidth(true);
         grid.addColumn(Residente::getNombre).setHeader("Nombre").setAutoWidth(true);
         grid.addColumn(Residente::getApellidos).setHeader("Apellidos").setAutoWidth(true);
         grid.addColumn(Residente::getFechaDeNacimiento).setHeader("Fecha de nacimiento").setAutoWidth(true);
@@ -317,7 +533,7 @@ public class MainView extends VerticalLayout {
         Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Residente.class));
         refrescar.run();
         grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(residente -> {
-            documento.setValue(valor(residente.getDocumento()));
+            id.setValue(valor(residente.getIdResidente()));
             nombre.setValue(valor(residente.getNombre()));
             apellidos.setValue(valor(residente.getApellidos()));
             fechaNacimiento.setValue(residente.getFechaDeNacimiento());
@@ -333,12 +549,12 @@ public class MainView extends VerticalLayout {
                     fechaNacimiento.getValue(), celular.getValue(), correo.getValue());
             crudService.guardar(residente);
             refrescar.run();
-            documento.setValue(valor(residente.getDocumento()));
-            Notification.show("Residente guardado con documento: " + residente.getDocumento());
+            id.setValue(valor(residente.getIdResidente()));
+            Notification.show("Residente guardado con ID: " + residente.getIdResidente());
         });
-        Button consultar = botonConsultar(grid, Residente.class, documento, "Residente");
+        Button consultar = botonConsultar(grid, Residente.class, id, "Residente");
         Button actualizar = new Button("Actualizar", event -> {
-            Long idValue = parseId(documento);
+            Long idValue = parseId(id);
             if (idValue == null || !validar(fechaNacimiento.getValue(), "Seleccione la fecha de nacimiento")) {
                 return;
             }
@@ -356,18 +572,18 @@ public class MainView extends VerticalLayout {
             refrescar.run();
             Notification.show("Residente actualizado");
         });
-        Button eliminar = botonEliminar(grid, Residente.class, documento, "Residente",
+        Button eliminar = botonEliminar(grid, Residente.class, id, "Residente",
                 () -> {
-                    limpiar(documento, nombre, apellidos, celular, correo);
+                    limpiar(id, nombre, apellidos, celular, correo);
                     fechaNacimiento.clear();
                 }, refrescar);
         layout.add(crearDescargas("Residentes", "residentes", Residente.class,
-                        List.of("Documento", "Nombre", "Apellidos", "Fecha de nacimiento", "Celular", "Correo"),
-                        residente -> List.of(valor(residente.getDocumento()), valor(residente.getNombre()),
+                        List.of("ID", "Nombre", "Apellidos", "Fecha de nacimiento", "Celular", "Correo"),
+                        residente -> List.of(valor(residente.getIdResidente()), valor(residente.getNombre()),
                                 valor(residente.getApellidos()), valor(residente.getFechaDeNacimiento()),
                                 valor(residente.getCelular()), valor(residente.getCorreo()))),
                 form, crearAcciones(crear, consultar, actualizar, eliminar,
-                botonLimpiar(grid, documento, nombre, apellidos, celular, correo, fechaNacimiento)), grid);
+                botonLimpiar(grid, id, nombre, apellidos, celular, correo, fechaNacimiento)), grid);
         return layout;
     }
 
@@ -465,7 +681,7 @@ public class MainView extends VerticalLayout {
             }
         });
     }
-
+    /* FUNCIÓN PARA EXPORTAR EN FORMATO PDF Y EXCEL */
     private <T> HorizontalLayout crearDescargas(String titulo, String nombreArchivo, Class<T> tipo,
             List<String> encabezados, Function<T, List<String>> convertirFila) {
         StreamResource recursoPdf = new StreamResource(nombreArchivo + ".pdf", () -> {
@@ -487,7 +703,11 @@ public class MainView extends VerticalLayout {
         Anchor descargarExcel = new Anchor(recursoExcel, "Descargar Excel");
         descargarExcel.getElement().setAttribute("download", true);
         descargarExcel.getElement().setAttribute("theme", "button");
-
+        
+        
+        
+        
+        /* BOTÓN PARA EXPORTAR EN FORMATO PDF Y EXCEL */
         HorizontalLayout descargas = new HorizontalLayout(descargarPdf, descargarExcel);
         descargas.getStyle().set("flex-wrap", "wrap");
         return descargas;

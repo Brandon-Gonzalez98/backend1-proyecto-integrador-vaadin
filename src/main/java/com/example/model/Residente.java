@@ -13,16 +13,17 @@ import jakarta.persistence.Table;
 public class Residente {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Documento;
+    private Long IdResidente;
     /*String Documento;*/
     String nombre;
     String Apellidos;
     LocalDate FechaDeNacimiento;
     String Celular;
     String Correo;
-    public Residente(Long documento, String nombre, String apellidos, LocalDate fechaDeNacimiento, String celular,
+    
+    public Residente(Long IdResidente, String nombre, String apellidos, LocalDate fechaDeNacimiento, String celular,
             String correo) {
-        this.Documento = documento;
+        this.IdResidente = IdResidente;
         this.nombre = nombre;
         this.Apellidos = apellidos;
         this.FechaDeNacimiento = fechaDeNacimiento;
@@ -34,12 +35,15 @@ public class Residente {
         
     }
 
-    public Long getDocumento() {
-        return Documento;
+     // ===================
+    // Getters y setters
+    // ===================
+    public Long getIdResidente() {
+        return IdResidente;
     }
 
-    public void setDocumento(Long documento) {
-        Documento = documento;
+    public void setIdResidente(Long idResidente) {
+        this.IdResidente = idResidente;
     }
 
     public String getNombre() {

@@ -32,6 +32,9 @@ public class Administrador {
         
     }
 
+     // ===================
+    // Getters y setters
+    // ===================
     public String getDocumento() {
         return Documento;
     }

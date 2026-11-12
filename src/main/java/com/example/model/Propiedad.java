@@ -10,7 +10,7 @@ import jakarta.persistence.Table;
 @Table(name = "propiedades")
 
 public class Propiedad {
-@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long Nit;
     String  NombrePropiedad;
@@ -33,6 +33,9 @@ public class Propiedad {
        
     }
 
+     // ===================
+    // Getters y setters
+    // ===================
     public long getNit() {
         return Nit;
     }
