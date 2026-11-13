@@ -1,8 +1,6 @@
 package com.example.model;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -12,14 +10,14 @@ import jakarta.persistence.Table;
 public class Parqueadero {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long IdParqueadero;
+    /*@GeneratedValue(strategy = GenerationType.IDENTITY)*/
+    String IdParqueadero;
     String Tipo;
     String IdPropietario;
     String IdResidente;
     String IdApto;   
 
-    public Parqueadero(Long IdParqueadero, String tipo, String IdPropietario, String IdResidente, String IdApto) {
+    public Parqueadero(String IdParqueadero, String tipo, String IdPropietario, String IdResidente, String IdApto) {
         this.IdParqueadero = IdParqueadero;
         this.Tipo = tipo;
         this.IdPropietario = IdPropietario;
@@ -33,11 +31,11 @@ public class Parqueadero {
      // ===================
     // Getters y setters
     // ===================
-    public Long getIdParqueadero() {
+    public String getIdParqueadero() {
         return IdParqueadero;
     }
 
-    public void setIdParqueadero(Long idParqueadero) {
+    public void setIdParqueadero(String idParqueadero) {
         IdParqueadero = idParqueadero;
     }
 
@@ -49,12 +47,12 @@ public class Parqueadero {
         Tipo = tipo;
     }
 
-    public String getIdPopietario() {
+    public String getIdPropietario() {
         return IdPropietario;
     }
 
-    public void setIdPopietario(String idPopietario) {
-        IdPropietario = idPopietario;
+    public void setIdPropietario(String idPropietario) {
+        IdPropietario = idPropietario;
     }
 
     public String getIdResidente() {

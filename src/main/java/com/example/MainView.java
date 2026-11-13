@@ -385,7 +385,7 @@ public class MainView extends VerticalLayout {
     private Component crearSeccionParqueaderos() {
         VerticalLayout layout = new VerticalLayout();
         TextField id = new TextField("ID del parqueadero");
-        id.setReadOnly(true);
+        id.setRequiredIndicatorVisible(true);
         TextField tipo = new TextField("Tipo");
         TextField idPropietario = new TextField("ID del propietario");
         TextField idResidente = new TextField("ID del residente");
@@ -395,7 +395,7 @@ public class MainView extends VerticalLayout {
         Grid<Parqueadero> grid = new Grid<>(Parqueadero.class, false);
         grid.addColumn(Parqueadero::getIdParqueadero).setHeader("ID").setAutoWidth(true);
         grid.addColumn(Parqueadero::getTipo).setHeader("Tipo").setAutoWidth(true);
-        grid.addColumn(Parqueadero::getIdPopietario).setHeader("ID del propietario").setAutoWidth(true);
+        grid.addColumn(Parqueadero::getIdPropietario).setHeader("ID del propietario").setAutoWidth(true);
         grid.addColumn(Parqueadero::getIdResidente).setHeader("ID del residente").setAutoWidth(true);
         grid.addColumn(Parqueadero::getIdApto).setHeader("ID del apartamento").setAutoWidth(true);
         Runnable refrescar = () -> grid.setItems(crudService.listarTodos(Parqueadero.class));
@@ -403,23 +403,38 @@ public class MainView extends VerticalLayout {
         grid.addSelectionListener(event -> event.getFirstSelectedItem().ifPresent(parqueadero -> {
             id.setValue(valor(parqueadero.getIdParqueadero()));
             tipo.setValue(valor(parqueadero.getTipo()));
-            idPropietario.setValue(valor(parqueadero.getIdPopietario()));
+            idPropietario.setValue(valor(parqueadero.getIdPropietario()));
             idResidente.setValue(valor(parqueadero.getIdResidente()));
             idApartamento.setValue(valor(parqueadero.getIdApto()));
         }));
 
         Button crear = botonCrear(() -> {
-            Parqueadero parqueadero = new Parqueadero(null, tipo.getValue(), idPropietario.getValue(),
+            String idValue = id.getValue().trim();
+            if (!validar(idValue, "Ingrese el ID del parqueadero")) {
+                return;
+            }
+            Parqueadero parqueadero = new Parqueadero(idValue, tipo.getValue(), idPropietario.getValue(),
                     idResidente.getValue(), idApartamento.getValue());
             crudService.guardar(parqueadero);
             refrescar.run();
             id.setValue(valor(parqueadero.getIdParqueadero()));
             Notification.show("Parqueadero guardado con ID: " + parqueadero.getIdParqueadero());
         });
-        Button consultar = botonConsultar(grid, Parqueadero.class, id, "Parqueadero");
+        Button consultar = new Button("Consultar", event -> {
+            String idValue = id.getValue().trim();
+            if (!validar(idValue, "Ingrese el ID del parqueadero que desea consultar")) {
+                return;
+            }
+            Parqueadero parqueadero = crudService.buscarPorId(Parqueadero.class, idValue);
+            if (parqueadero == null) {
+                Notification.show("No se encontró el parqueadero");
+            } else {
+                grid.select(parqueadero);
+            }
+        });
         Button actualizar = new Button("Actualizar", event -> {
-            Long idValue = parseId(id);
-            if (idValue == null) {
+            String idValue = id.getValue().trim();
+            if (!validar(idValue, "Ingrese el ID del parqueadero")) {
                 return;
             }
             Parqueadero parqueadero = crudService.buscarPorId(Parqueadero.class, idValue);
@@ -428,19 +443,32 @@ public class MainView extends VerticalLayout {
                 return;
             }
             parqueadero.setTipo(tipo.getValue());
-            parqueadero.setIdPopietario(idPropietario.getValue());
+            parqueadero.setIdPropietario(idPropietario.getValue());
             parqueadero.setIdResidente(idResidente.getValue());
             parqueadero.setIdApto(idApartamento.getValue());
             crudService.actualizar(parqueadero);
             refrescar.run();
             Notification.show("Parqueadero actualizado");
         });
-        Button eliminar = botonEliminar(grid, Parqueadero.class, id, "Parqueadero",
-                () -> limpiar(id, tipo, idPropietario, idResidente, idApartamento), refrescar);
+        Button eliminar = new Button("Eliminar", event -> {
+            String idValue = id.getValue().trim();
+            if (!validar(idValue, "Ingrese el ID del parqueadero")) {
+                return;
+            }
+            if (crudService.eliminar(Parqueadero.class, idValue)) {
+                refrescar.run();
+                limpiar(id, tipo, idPropietario, idResidente, idApartamento);
+                grid.deselectAll();
+                Notification.show("Parqueadero eliminado");
+            } else {
+                Notification.show("No se encontró el parqueadero");
+            }
+        });
+        eliminar.addThemeVariants(ButtonVariant.LUMO_ERROR);
         layout.add(crearDescargas("Parqueaderos", "parqueaderos", Parqueadero.class,
                         List.of("ID", "Tipo", "ID del propietario", "ID del residente", "ID del apartamento"),
                         parqueadero -> List.of(valor(parqueadero.getIdParqueadero()), valor(parqueadero.getTipo()),
-                                valor(parqueadero.getIdPopietario()), valor(parqueadero.getIdResidente()),
+                                valor(parqueadero.getIdPropietario()), valor(parqueadero.getIdResidente()),
                                 valor(parqueadero.getIdApto()))),
                 form, crearAcciones(crear, consultar, actualizar, eliminar,
                         botonLimpiar(grid, id, tipo, idPropietario, idResidente, idApartamento)), grid);

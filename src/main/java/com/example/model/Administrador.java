@@ -7,6 +7,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "administradores")
+
 public class Administrador {
     @Id                                                
     String Documento;
